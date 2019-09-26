@@ -7,9 +7,21 @@ output: github_document
 
 ```{r setup, include=FALSE}
 library(tidyverse)
+library(readxl)
+
 ```
 
 ```{r}
+Trash_Wheel_data = 
+   readxl::read_excel("./data/HealthyHarborWaterWheelTotals2018-7-28.xlsx",sheet = 1) %>% 
+   janitor::clean_names() %>%  
+   drop_na(dumpster) %>%
+   mutate(
+     sports_balls = as.integer(pull(wheel_data, sports_balls))
+   )
+
+   
+
 
 ```
 
