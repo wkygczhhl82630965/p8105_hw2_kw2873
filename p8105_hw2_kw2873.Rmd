@@ -17,13 +17,37 @@ Wheel_data =
    janitor::clean_names() %>%
    drop_na(dumpster) %>%
    mutate(
-     sports_balls = as.integer(sports_balls)
+   sports_balls = as.integer(sports_balls) 
    )
 
 ```
 
 
 ```{r}
+### clean and modify data set for precipitation in 2017
+preci_2017_data =
+  readxl::read_excel("./data/HealthyHarborWaterWheelTotals2018-7-28.xlsx",
+                     sheet = 4,skip = 1) %>%
+  janitor::clean_names()  %>%
+  mutate( year = 2017,
+          total_precipitation = total
+          ) %>%
+drop_na(total_precipitation) 
+
+### clean and modify dataset for precipitation in 2018
+preci_2018_data =
+readxl::read_excel("./data/HealthyHarborWaterWheelTotals2018-7-28.xlsx",sheet = 3, 
+                   skip = 1) %>%
+  janitor::clean_names() %>%
+  mutate( year = 2018,
+          total_precipitation = total
+          ) %>%
+  drop_na(total_precipitation)  
+
+### combiing dataset for precipitation in 2017 and 2018 
+preci_17_18_data =
+   bind_rows(preci_2017_data, preci_2018_data)
+  
 ```
 
 
