@@ -10,39 +10,37 @@ library(tidyverse)
 library(readxl)
 
 ```
-
+### problem 1
 ```{r}
+### basic manipulation for dataset
 Wheel_data = 
-   readxl::read_excel("./data/HealthyHarborWaterWheelTotals2018-7-28.xlsx",sheet = 1) %>%
+   readxl::read_excel("./data/Trash-Wheel-Collection-Totals-8-6-19.xlsx",sheet = 1,
+                      range = "A2:N408" ) %>%
    janitor::clean_names() %>%
    drop_na(dumpster) %>%
    mutate(
    sports_balls = as.integer(sports_balls) 
    )
-
 ```
 
 
 ```{r}
 ### clean and modify data set for precipitation in 2017
 preci_2017_data =
-  readxl::read_excel("./data/HealthyHarborWaterWheelTotals2018-7-28.xlsx",
-                     sheet = 4,skip = 1) %>%
+  readxl::read_excel("./data/Trash-Wheel-Collection-Totals-8-6-19.xlsx",
+                     sheet = 4,range = "A2:B14") %>%
+  drop_na() %>%
   janitor::clean_names()  %>%
-  mutate( year = 2017,
-          total_precipitation = total
-          ) %>%
-drop_na(total_precipitation) 
+  mutate( year = 2017) 
+
 
 ### clean and modify dataset for precipitation in 2018
 preci_2018_data =
-readxl::read_excel("./data/HealthyHarborWaterWheelTotals2018-7-28.xlsx",sheet = 3, 
-                   skip = 1) %>%
-  janitor::clean_names() %>%
-  mutate( year = 2018,
-          total_precipitation = total
-          ) %>%
-  drop_na(total_precipitation)  
+  readxl::read_excel("./data/Trash-Wheel-Collection-Totals-8-6-19.xlsx",
+                     sheet = 4,range = "A2:B14") %>%
+  drop_na() %>%
+  janitor::clean_names()  %>%
+  mutate( year = 2018) 
 
 ### combiing dataset for precipitation in 2017 and 2018 
 preci_17_18_data =
@@ -50,32 +48,34 @@ preci_17_18_data =
    mutate(month = month.name[month]
    )
 ```
+There are `r nrow(Wheel_data)`observations in Wheel_data dataset, and `r nrow(preci_17_18_data)` observations in preci_17_18_data. Wheel_data dataset contains data of`r nrow(Wheel_data)` dumpsters from`r pull(Wheel_data, date)[1]` to `r pull(Wheel_data, date)[nrow(Wheel_data)]`. The total precipitation in 2018 is `r sum(pull(preci_2018_data, total))`, and the total precipitation in 2017 is `r sum(pull(preci_2017_data, total))`. The median number of sports balls in a dumpster in 2017 is 
+`r median(pull(Wheel_data %>% filter(year == 2017), sports_balls))`
 
 ### problem 2
-```{r}
+```{r }
 ### manipulation pols monts data
 pols_months_data = 
   read_csv("./data/pols-month.csv") %>%
   janitor::clean_names() %>%
   separate(col = mon, into = c("year","month","day")) %>%
- pivot_longer(
+  pivot_longer(
   starts_with("prez"),
   names_to = "president",
    names_prefix = "prez_",
    values_to = "value") %>%
    filter(!(value == "0")) %>%   
    select(year, month, everything(), -value, -day) %>%
-   mutate(year = as.integer(year))
+   mutate(year = as.character(year), month = month.name[as.numeric(month)])
 
 
-### manipulation of snp.csv----problem with year 
+### manipulation of snp.csv
 snp_data = 
   read_csv("./data/snp.csv") %>%
   janitor::clean_names() %>%
-  separate(col = date, into = c("day","month","year")) %>%
-  mutate(close = as.integer(close)) %>%
-  select(year, month, everything(),-day)  %>%
-  mutate(year = as.integer(year))
+  separate(col = date, into = c("day","month","year"),sep = "/") %>%
+  mutate(month = month.name[as.numeric(month)]) %>%
+  select(year,month, day, close) %>%
+  arrange(year,month)
 
 
 ### manipulation of unemployment.csv
@@ -87,15 +87,24 @@ unemployment_data =
      names_to = "month",
      values_to = "umemployment value"
      ) %>%
- mutate(year = as.integer(year))
+ mutate(year = as.character(year), month = replace(month, values = month.name),
+        )
 
 ### joining dataset
 merged_data = 
   left_join(pols_months_data, snp_data, by = c("year","month")) %>% 
   left_join(., unemployment_data, by = c("year","month"))
 ```
+In pols_months_data, there are `r nrow(pols_months_data)` observations of `r ncol(pols_months_data)` variables related to the number of national politicians who are democratic or republic at any given time. There are date varaibles, number of republican or democratic governors/senators/representatives/president on the associated date. The range of dates is from 1949 to 2015. Some of the key variables are president and year. 
+
+In the dataset of snp_data, there are `r nrow(snp_data)` observations of `r ncol(snp_data)` variables related to Standard & Poor’s stock market index (S&P), often used as a representative measure of stock market as a whole. There are year, month and close values of the S&P stock index on the associated date. The range of dates is from 1950 to 2015. Some of the key variables are close, year and month. 
+In the dataset called unemployment_data, there are `r nrow(unemployment_data)` observations of `r ncol(unemployment_data)` variables related to the precentage of unemployment on the associated dates, which is pretty self-explanatory. The range of dates is from 
+
+In the dataset of merged_data, this is pretty much the same with what was stated above, because this dataset is just a combination of all three datasets above. There are `r nrow(merged_data)` observations of `r ncol(merged_data)` variables.
+
 ### problem 3
-```{r}
+```{r }
+
 baby_names_data = 
   read_csv("./data/Popular_Baby_Names.csv", col_types = "icccii") %>% 
   janitor::clean_names() %>%
@@ -112,8 +121,9 @@ Olivia_female =
   pivot_wider(
     id_cols = c("ethnicity", "year_of_birth"),
     names_from = "year_of_birth",
-    values_from = "rank"
-  )
+    values_from = "rank")
+  
+
 
 Popular_name_male = 
   filter(baby_names_data, rank == 1, gender == "MALE") %>% 
